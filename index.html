@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจำลองการสุ่มกาชา (Gacha Simulator)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* ============================================================
+           DESIGN TOKENS — Dark / Light Theme Variables
+           ============================================================ */
+        :root[data-theme="dark"] {
+            /* Cyberpunk Neon — Deep Purple base with Neon Rose + Teal accents */
+            --bg: #0f051d;
+            --bg-gradient: radial-gradient(ellipse at top, #1e0b36 0%, #0f051d 55%, #050010 100%);
+            --surface: #1e0b36;
+            --surface-2: #2a1149;
+            --surface-3: #3a1f5e;
+            --border: #3b0764;
+            --border-strong: #6b21a8;
+            --text: #f5f3ff;
+            --text-muted: #c084fc;
+            --text-soft: #ddd6fe;
+            /* Primary (buttons / CTAs) — Neon Rose */
+            --accent: #f43f5e;
+            --accent-hover: #fb7185;
+            --accent-soft: rgba(244, 63, 94, 0.18);
+            --accent-glow: rgba(244, 63, 94, 0.45);
+            /* Secondary accent — Neon Teal / Cyan */
+            --accent-2: #00f5d4;
+            --accent-2-soft: rgba(0, 245, 212, 0.15);
+            /* Rarities */
+            --ssr: #ff007f;
+            --ssr-soft: rgba(255, 0, 127, 0.18);
+            --sr: #a855f7;
+            --sr-soft: rgba(168, 85, 247, 0.18);
+            --r: #06b6d4;
+            --r-soft: rgba(6, 182, 212, 0.18);
+            --n: #9ca3af;
+            --n-soft: rgba(156, 163, 175, 0.15);
+            /* Semantic */
+            --success: #10f5a0;
+            --success-soft: rgba(16, 245, 160, 0.15);
+            --danger: #ff3b6e;
+            --danger-soft: rgba(255, 59, 110, 0.18);
+            --warning: #fbbf24;
+            --warning-soft: rgba(251, 191, 36, 0.18);
+            /* Shadows / Glow */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 16px rgba(59, 7, 100, 0.45);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+            --shadow-glow: 0 0 32px rgba(244, 63, 94, 0.35);
+        }
+        :root[data-theme="light"] {
+            /* Cyberpunk Neon — soft lilac base with Hot Pink primary + Violet accent */
+            --bg: #faf5ff;
+            --bg-gradient: radial-gradient(ellipse at top, #ffffff 0%, #f3e8ff 60%, #faf5ff 100%);
+            --surface: #ffffff;
+            --surface-2: #faf5ff;
+            --surface-3: #f5ebff;
+            --border: #f3e8ff;
+            --border-strong: #e9d5ff;
+            --text: #2e1065;
+            --text-muted: #701a75;
+            --text-soft: #581c87;
+            /* Primary (buttons / CTAs) — Neon Pink */
+            --accent: #db2777;
+            --accent-hover: #be185d;
+            --accent-soft: rgba(219, 39, 119, 0.1);
+            --accent-glow: rgba(219, 39, 119, 0.28);
+            /* Secondary accent — Violet */
+            --accent-2: #7c3aed;
+            --accent-2-soft: rgba(124, 58, 237, 0.1);
+            /* Rarities */
+            --ssr: #ff007f;
+            --ssr-soft: rgba(255, 0, 127, 0.1);
+            --sr: #a855f7;
+            --sr-soft: rgba(168, 85, 247, 0.12);
+            --r: #06b6d4;
+            --r-soft: rgba(6, 182, 212, 0.12);
+            --n: #6b7280;
+            --n-soft: rgba(107, 114, 128, 0.1);
+            /* Semantic */
+            --success: #059669;
+            --success-soft: rgba(5, 150, 105, 0.1);
+            --danger: #db2777;
+            --danger-soft: rgba(219, 39, 119, 0.1);
+            --warning: #d97706;
+            --warning-soft: rgba(217, 119, 6, 0.1);
+            /* Shadows / Glow */
+            --shadow-sm: 0 1px 2px rgba(46, 16, 101, 0.06);
+            --shadow-md: 0 4px 16px rgba(46, 16, 101, 0.1);
+            --shadow-lg: 0 12px 32px rgba(46, 16, 101, 0.15);
+            --shadow-glow: 0 0 24px rgba(219, 39, 119, 0.2);
+        }
+
+        /* RESET & BASE */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            background-image: var(--bg-gradient);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.02em; }
+        h2 { font-size: 1.05rem; }
+        h3 { font-size: 0.92rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.05em; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+        input, select { font-family: inherit; }
+        code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* HEADER */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: color-mix(in srgb, var(--surface) 88%, transparent);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.05rem; letter-spacing: -0.03em; }
+        .logo-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
+        .logo-title { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.03em; }
+        .logo-subtitle {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 480px;
+        }
+        @media (max-width: 900px) { .logo-subtitle { display: none; } }
+        .logo-mark {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+            display: grid; place-items: center; color: white;
+            box-shadow: 0 0 24px var(--accent-glow), 0 0 12px var(--accent-2-soft);
+            animation: logoPulse 2.6s ease-in-out infinite;
+        }
+        .logo-mark i {
+            width: 20px; height: 20px;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.85))
+                    drop-shadow(0 0 10px var(--accent-glow));
+        }
+        @keyframes logoPulse {
+            0%, 100% {
+                box-shadow: 0 0 22px var(--accent-glow), 0 0 12px var(--accent-2-soft);
+            }
+            50% {
+                box-shadow: 0 0 36px var(--accent-glow),
+                            0 0 22px var(--accent-2-soft),
+                            inset 0 0 10px rgba(255, 255, 255, 0.18);
+            }
+        }
+        .tabs {
+            display: flex; gap: 4px;
+            margin-left: auto; margin-right: auto;
+            background: var(--surface-2); padding: 4px;
+            border-radius: 12px; border: 1px solid var(--border);
+        }
+        .tab-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 16px; font-weight: 500; font-size: 0.88rem;
+            color: var(--text-muted); border-radius: 9px;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover { color: var(--text); background: var(--surface-3); }
+        .tab-btn.active {
+            background: var(--accent); color: white;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+        .tab-btn i { width: 16px; height: 16px; }
+        .theme-toggle {
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            display: grid; place-items: center;
+            color: var(--text-soft); transition: all 0.2s ease;
+        }
+        .theme-toggle:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+        .theme-toggle i { width: 18px; height: 18px; }
+
+        /* LAYOUT */
+        main {
+            max-width: 1280px; margin: 0 auto; padding: 24px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            transition: border-color 0.2s ease;
+        }
+        .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .card-header i { width: 18px; height: 18px; color: var(--accent); }
+        .card-header h2 { flex: 1; }
+        .card-header-actions { display: flex; gap: 8px; margin-left: auto; }
+
+        /* COLLAPSIBLE CONFIG PANEL */
+        .config-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+        .config-panel > summary {
+            list-style: none; cursor: pointer;
+            padding: 16px 20px;
+            display: flex; align-items: center; gap: 12px;
+            user-select: none; transition: background 0.15s ease;
+        }
+        .config-panel > summary::-webkit-details-marker { display: none; }
+        .config-panel > summary:hover { background: var(--surface-2); }
+        .config-panel > summary .config-title {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 700; font-size: 1.05rem; flex: 1;
+        }
+        .config-panel > summary .config-title i { width: 18px; height: 18px; color: var(--accent); }
+        .config-panel > summary .chevron {
+            width: 20px; height: 20px; color: var(--text-muted);
+            transition: transform 0.25s ease;
+        }
+        .config-panel[open] > summary .chevron { transform: rotate(180deg); }
+        .config-body {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 16px;
+            padding: 0 20px 20px;
+        }
+        @media (max-width: 900px) { .config-body { grid-template-columns: 1fr; } }
+
+        /* RATE SETTINGS */
+        .rate-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .rate-input {
+            position: relative;
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            transition: border-color 0.2s ease;
+        }
+        .rate-input:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+        .rate-input .rarity-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+        .rate-input .dot { width: 7px; height: 7px; border-radius: 50%; }
+        .rate-input[data-rarity="SSR"] .rarity-tag { color: var(--ssr); }
+        .rate-input[data-rarity="SSR"] .dot { background: var(--ssr); box-shadow: 0 0 8px var(--ssr); }
+        .rate-input[data-rarity="SR"] .rarity-tag { color: var(--sr); }
+        .rate-input[data-rarity="SR"] .dot { background: var(--sr); box-shadow: 0 0 8px var(--sr); }
+        .rate-input[data-rarity="R"] .rarity-tag { color: var(--r); }
+        .rate-input[data-rarity="R"] .dot { background: var(--r); }
+        .rate-input[data-rarity="N"] .rarity-tag { color: var(--n); }
+        .rate-input[data-rarity="N"] .dot { background: var(--n); }
+        .rate-input .input-row { display: flex; align-items: baseline; gap: 4px; }
+        .rate-input input {
+            flex: 1; background: transparent; border: none; outline: none;
+            color: var(--text); font-size: 1.4rem; font-weight: 700;
+            font-family: 'JetBrains Mono', monospace; width: 100%;
+            -moz-appearance: textfield;
+        }
+        .rate-input input::-webkit-outer-spin-button,
+        .rate-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .rate-input .percent { color: var(--text-muted); font-weight: 600; }
+        .rate-total {
+            margin-top: 12px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; border-radius: 10px;
+            font-weight: 600; font-size: 0.88rem;
+        }
+        .rate-total.valid { background: var(--success-soft); color: var(--success); }
+        .rate-total.invalid { background: var(--danger-soft); color: var(--danger); }
+        .rate-total .mono { font-size: 1rem; }
+
+        /* ITEM POOL */
+        .pool-form {
+            display: grid;
+            grid-template-columns: 1fr 130px auto;
+            gap: 8px; margin-bottom: 14px;
+        }
+        @media (max-width: 600px) { .pool-form { grid-template-columns: 1fr; } }
+        .form-input, .form-select {
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: var(--text);
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease;
+            outline: none;
+        }
+        .form-input:focus, .form-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+        .pool-table-wrapper {
+            max-height: 260px; overflow-y: auto;
+            border-radius: 10px; border: 1px solid var(--border);
+        }
+        .pool-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .pool-table thead {
+            position: sticky; top: 0; background: var(--surface-2); z-index: 1;
+        }
+        .pool-table th {
+            text-align: left; padding: 10px 14px;
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-muted); font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+        .pool-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+        .pool-table tr:last-child td { border-bottom: none; }
+        .pool-table tr:hover td { background: var(--surface-2); }
+        .pool-table td.actions { text-align: right; white-space: nowrap; }
+
+        .rarity-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 9px; border-radius: 999px;
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .rarity-badge.SSR { background: var(--ssr-soft); color: var(--ssr); }
+        .rarity-badge.SR { background: var(--sr-soft); color: var(--sr); }
+        .rarity-badge.R { background: var(--r-soft); color: var(--r); }
+        .rarity-badge.N { background: var(--n-soft); color: var(--n); }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 7px; padding: 9px 16px; border-radius: 10px;
+            font-weight: 600; font-size: 0.88rem;
+            transition: all 0.18s ease; white-space: nowrap;
+        }
+        .btn i { width: 15px; height: 15px; }
+        .btn-primary {
+            background: var(--accent); color: white;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 6px 16px var(--accent-glow); }
+        .btn-secondary {
+            background: var(--surface-2); color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: var(--surface-3); border-color: var(--border-strong); }
+        .btn-ghost { background: transparent; color: var(--text-muted); padding: 6px 10px; }
+        .btn-ghost:hover { color: var(--text); background: var(--surface-2); }
+        .btn-danger { background: var(--danger-soft); color: var(--danger); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-icon { width: 30px; height: 30px; padding: 0; border-radius: 8px; }
+        .btn-cta { padding: 14px 28px; font-size: 0.95rem; border-radius: 12px; }
+        .btn-cta i { width: 18px; height: 18px; }
+
+        /* TAB CONTENT */
+        .tab-content { display: none; flex-direction: column; gap: 20px; }
+        .tab-content.active { display: flex; animation: fadeSlide 0.3s ease; }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SIM CONTROLS */
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px; margin-bottom: 16px;
+        }
+        .control-field label {
+            display: block; font-size: 0.74rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-muted); margin-bottom: 6px;
+        }
+        .control-field .form-input {
+            width: 100%; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+        }
+        .pity-row {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 12px;
+            padding: 14px 16px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        .pity-left { display: flex; align-items: center; gap: 12px; }
+        .pity-left i { width: 18px; height: 18px; color: var(--warning); }
+        .pity-info { display: flex; flex-direction: column; gap: 2px; }
+        .pity-info strong { font-weight: 600; }
+        .pity-info span { font-size: 0.78rem; color: var(--text-muted); }
+
+        /* TOGGLE SWITCH */
+        .toggle { position: relative; display: inline-block; width: 42px; height: 24px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle .slider {
+            position: absolute; cursor: pointer; inset: 0;
+            background: var(--surface-3);
+            border: 1px solid var(--border);
+            border-radius: 24px; transition: 0.25s;
+        }
+        .toggle .slider::before {
+            content: ''; position: absolute;
+            height: 16px; width: 16px; left: 3px;
+            top: 50%; transform: translateY(-50%);
+            background: white; border-radius: 50%;
+            transition: 0.25s; box-shadow: var(--shadow-sm);
+        }
+        .toggle input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+        .toggle input:checked + .slider::before { transform: translate(18px, -50%); }
+        .pity-config { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .pity-config input {
+            width: 70px; padding: 6px 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text);
+            font-family: 'JetBrains Mono', monospace; font-weight: 600;
+            outline: none;
+        }
+        .pity-config.is-disabled {
+            opacity: 0.35;
+            pointer-events: none;
+            filter: grayscale(0.6);
+            transition: opacity 0.25s ease, filter 0.25s ease;
+        }
+        .run-bar { display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* DISTRIBUTION CHART — Pure-CSS stacked horizontal bar */
+        .dist-summary { display: flex; flex-direction: column; gap: 14px; }
+        .dist-row {
+            display: grid;
+            grid-template-columns: 78px 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+        .dist-row .dist-label {
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            text-align: right;
+        }
+        .dist-bar {
+            display: flex;
+            height: 38px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .dist-seg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+            white-space: nowrap;
+            min-width: 0;
+        }
+        .dist-seg:hover { filter: brightness(1.12); }
+        .dist-seg.SSR { background: linear-gradient(135deg, var(--ssr), #ff66b3); box-shadow: inset 0 0 12px rgba(255,255,255,0.15); }
+        .dist-seg.SR  { background: linear-gradient(135deg, var(--sr), #d4b5ff); }
+        .dist-seg.R   { background: linear-gradient(135deg, var(--r), #67e8f9); }
+        .dist-seg.N   { background: linear-gradient(135deg, var(--n), #d1d5db); }
+        .dist-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            margin-top: 12px;
+            padding-top: 14px;
+            border-top: 1px dashed var(--border);
+        }
+        .dist-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+        }
+        .dist-legend-swatch {
+            width: 14px; height: 14px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .dist-legend-item.SSR .dist-legend-swatch { background: var(--ssr); color: var(--ssr); }
+        .dist-legend-item.SR  .dist-legend-swatch { background: var(--sr); color: var(--sr); }
+        .dist-legend-item.R   .dist-legend-swatch { background: var(--r); color: var(--r); }
+        .dist-legend-item.N   .dist-legend-swatch { background: var(--n); color: var(--n); }
+        .dist-legend-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .dist-legend-delta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .dist-legend-delta.pos { color: var(--success); }
+        .dist-legend-delta.neg { color: var(--danger); }
+        .dist-legend-delta.zero { color: var(--text-muted); }
+        @media (max-width: 600px) {
+            .dist-row { grid-template-columns: 60px 1fr; }
+            .dist-row .dist-label { font-size: 0.7rem; }
+        }
+
+        /* STAT CARDS */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            position: relative; overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .stat-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+        .stat-card .stat-label {
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-muted); font-weight: 600;
+            margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .stat-card .stat-label i { width: 13px; height: 13px; }
+        .stat-card .stat-value {
+            font-size: 1.65rem; font-weight: 800; letter-spacing: -0.02em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-card .stat-sub { margin-top: 4px; font-size: 0.78rem; color: var(--text-muted); }
+        .stat-card.accent {
+            background: linear-gradient(135deg, var(--accent-soft) 0%, transparent 100%);
+            border-color: var(--accent);
+        }
+        .stat-card.ssr {
+            background: linear-gradient(135deg, var(--ssr-soft) 0%, transparent 100%);
+        }
+        .stat-card.ssr .stat-value { color: var(--ssr); }
+
+        /* CSS BAR CHART */
+        .chart { display: flex; flex-direction: column; gap: 16px; }
+        .chart-row {
+            display: grid; grid-template-columns: 60px 1fr;
+            gap: 14px; align-items: center;
+        }
+        .chart-label {
+            display: flex; align-items: center; gap: 6px;
+            font-weight: 700; font-size: 0.82rem;
+        }
+        .chart-bars { display: flex; flex-direction: column; gap: 6px; }
+        .chart-bar-track {
+            position: relative; height: 22px;
+            background: var(--surface-2);
+            border-radius: 6px; overflow: hidden;
+        }
+        .chart-bar-fill {
+            position: absolute; inset: 0;
+            border-radius: 6px;
+            transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; align-items: center; justify-content: flex-end;
+            padding-right: 8px;
+            font-size: 0.72rem; font-weight: 700; color: white;
+            font-family: 'JetBrains Mono', monospace;
+            min-width: 40px;
+        }
+        .chart-bar-fill.target {
+            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+            opacity: 0.7;
+            box-shadow: 0 0 10px var(--accent-glow), inset 0 0 8px rgba(255,255,255,0.15);
+        }
+        /* Per-rarity neon glow on the Actual bars */
+        .chart-bar-fill.actual.SSR {
+            background: linear-gradient(90deg, var(--ssr), #ff66b3);
+            box-shadow: 0 0 14px var(--ssr), 0 0 22px var(--ssr-soft), inset 0 0 10px rgba(255,255,255,0.18);
+        }
+        .chart-bar-fill.actual.SR  {
+            background: linear-gradient(90deg, var(--sr), #d4b5ff);
+            box-shadow: 0 0 14px var(--sr), 0 0 22px var(--sr-soft), inset 0 0 10px rgba(255,255,255,0.15);
+        }
+        .chart-bar-fill.actual.R   {
+            background: linear-gradient(90deg, var(--r), #67e8f9);
+            box-shadow: 0 0 14px var(--r), 0 0 22px var(--r-soft), inset 0 0 10px rgba(255,255,255,0.15);
+        }
+        .chart-bar-fill.actual.N   {
+            background: linear-gradient(90deg, var(--n), #d1d5db);
+            box-shadow: 0 0 10px var(--n-soft), inset 0 0 8px rgba(255,255,255,0.12);
+        }
+        /* Slightly taller bars for the Visual Summary section */
+        .chart-bar-track { height: 24px; }
+        .chart-tag {
+            font-size: 0.66rem; font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.06em;
+            min-width: 50px;
+        }
+        .chart-bar-line {
+            display: grid; grid-template-columns: 56px 1fr;
+            gap: 10px; align-items: center;
+        }
+
+        /* DATA TABLE */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .data-table th {
+            text-align: left; padding: 10px 14px;
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-muted); font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace; font-weight: 500;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+
+        /* DETAILED LOG */
+        .log-scroll {
+            max-height: 320px; overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px; padding: 8px;
+        }
+        .log-item {
+            display: grid; grid-template-columns: 48px 1fr auto auto;
+            gap: 12px; align-items: center;
+            padding: 10px 12px; border-radius: 8px;
+            transition: background 0.15s ease;
+        }
+        .log-item:hover { background: var(--surface-2); }
+        .log-item .roll-no {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem; color: var(--text-muted); font-weight: 600;
+        }
+        .log-item .item-name { font-weight: 500; }
+        .log-item .count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem; font-weight: 700; color: var(--text);
+        }
+
+        /* THAI INSIGHT BANNER */
+        .insight-banner {
+            background: linear-gradient(135deg, var(--accent-soft) 0%, var(--accent-2-soft) 100%);
+            border: 1px solid var(--accent);
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex; gap: 14px; align-items: flex-start;
+            box-shadow: 0 0 24px var(--accent-soft);
+        }
+        .insight-banner .insight-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: var(--accent);
+            display: grid; place-items: center;
+            color: white; flex-shrink: 0;
+            box-shadow: var(--shadow-glow);
+        }
+        .insight-banner .insight-icon i { width: 18px; height: 18px; }
+        .insight-banner .insight-body { flex: 1; }
+        .insight-banner .insight-title {
+            font-weight: 700; font-size: 0.78rem;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--accent); margin-bottom: 6px;
+        }
+        .insight-banner .insight-text {
+            line-height: 1.65; color: var(--text); font-size: 0.92rem;
+        }
+
+        /* HISTORY CARDS */
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
+        }
+        .history-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            transition: all 0.2s ease;
+        }
+        .history-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .history-card-head {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; padding-bottom: 10px;
+            border-bottom: 1px dashed var(--border);
+        }
+        .history-card-head .h-time {
+            font-size: 0.74rem; color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .history-card-head .h-type {
+            font-size: 0.7rem; font-weight: 700;
+            padding: 2px 8px; border-radius: 999px;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .history-card-head .h-type.single { background: var(--accent-soft); color: var(--accent); }
+        .history-card-head .h-type.monte { background: var(--ssr-soft); color: var(--ssr); }
+        .history-stats {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 8px; font-size: 0.82rem;
+        }
+        .history-stat { display: flex; flex-direction: column; gap: 2px; }
+        .history-stat-label {
+            font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-muted); font-weight: 600;
+        }
+        .history-stat-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+
+        /* EMPTY STATES */
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+        .empty-state .empty-icon {
+            width: 56px; height: 56px;
+            margin: 0 auto 12px;
+            border-radius: 16px;
+            background: var(--surface-2);
+            display: grid; place-items: center;
+            color: var(--text-muted);
+        }
+        .empty-state .empty-icon i { width: 26px; height: 26px; }
+        .empty-state .empty-title {
+            font-weight: 600; color: var(--text-soft);
+            margin-bottom: 4px; font-size: 0.95rem;
+        }
+        .empty-state .empty-text { font-size: 0.85rem; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+
+        /* TOAST */
+        .toast-container {
+            position: fixed; top: 80px; right: 24px;
+            z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px;
+            max-width: 360px; pointer-events: none;
+        }
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: var(--shadow-lg);
+            display: flex; align-items: flex-start; gap: 12px;
+            pointer-events: auto;
+            animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            min-width: 280px;
+        }
+        .toast.leaving { animation: toastOut 0.25s ease forwards; }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
+        .toast.success { border-left-color: var(--success); }
+        .toast.success .toast-icon { color: var(--success); background: var(--success-soft); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.error .toast-icon { color: var(--danger); background: var(--danger-soft); }
+        .toast.warning { border-left-color: var(--warning); }
+        .toast.warning .toast-icon { color: var(--warning); background: var(--warning-soft); }
+        .toast.info .toast-icon { color: var(--accent); background: var(--accent-soft); }
+        .toast-icon {
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            display: grid; place-items: center;
+            flex-shrink: 0;
+        }
+        .toast-icon i { width: 15px; height: 15px; }
+        .toast-body { flex: 1; min-width: 0; }
+        .toast-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 2px; }
+        .toast-msg { font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; }
+        .toast-close {
+            color: var(--text-muted);
+            padding: 2px; border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .toast-close:hover { color: var(--text); }
+        .toast-close i { width: 14px; height: 14px; }
+
+        /* SCROLLBARS */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* UTILITIES */
+        .row { display: flex; align-items: center; gap: 8px; }
+        .gap-sm { gap: 6px; }
+        .text-muted { color: var(--text-muted); }
+        .hidden { display: none !important; }
+
+        @media (max-width: 700px) {
+            .header-inner { flex-wrap: wrap; gap: 12px; padding: 12px 16px; }
+            .tabs { order: 3; width: 100%; justify-content: center; margin: 0; }
+            .tab-btn { flex: 1; justify-content: center; padding: 8px 10px; font-size: 0.8rem; }
+            main { padding: 16px; }
+            .card { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    <!-- HEADER -->
+    <header>
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-mark" aria-hidden="true"><i data-lucide="dices"></i></div>
+                <div class="logo-text">
+                    <span class="logo-title">Gacha Drop Rate Simulator</span>
+                    <span class="logo-subtitle">โปรแกรมจำลองและวิเคราะห์สถิติอัตราการสุ่มกาชาอย่างละเอียด</span>
+                </div>
+            </div>
+            <nav class="tabs" role="tablist">
+                <button class="tab-btn active" data-tab="single" role="tab" aria-selected="true">
+                    <i data-lucide="dice-5"></i><span>สุ่มครั้งเดียว</span>
+                </button>
+                <button class="tab-btn" data-tab="monte" role="tab" aria-selected="false">
+                    <i data-lucide="bar-chart-3"></i><span>Monte Carlo</span>
+                </button>
+                <button class="tab-btn" data-tab="history" role="tab" aria-selected="false">
+                    <i data-lucide="history"></i><span>ประวัติย้อนหลัง</span>
+                </button>
+            </nav>
+            <button class="theme-toggle" id="themeToggle" aria-label="สลับธีม">
+                <i data-lucide="moon" id="themeIcon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- COLLAPSIBLE CONFIG PANEL -->
+        <details class="config-panel" id="configPanel" open>
+            <summary>
+                <div class="config-title">
+                    <i data-lucide="settings-2"></i>
+                    <span>ตั้งค่าการสุ่ม</span>
+                </div>
+                <span class="text-muted" style="font-size:0.82rem;" id="configHint">
+                    ตั้งค่าอัตราการสุ่มและสร้างคลังไอเทมของคุณ
+                </span>
+                <i data-lucide="chevron-down" class="chevron"></i>
+            </summary>
+            <div class="config-body">
+                <!-- RATE SETTINGS -->
+                <section>
+                    <div class="card-header" style="margin-bottom:12px;">
+                        <i data-lucide="percent"></i>
+                        <h2>ตั้งค่าอัตราการสุ่ม (Rate Settings)</h2>
+                    </div>
+                    <div class="rate-grid">
+                        <div class="rate-input" data-rarity="SSR">
+                            <span class="rarity-tag"><span class="dot"></span>SSR</span>
+                            <div class="input-row">
+                                <input type="number" min="0" max="100" step="0.1" value="1" data-rate="SSR" aria-label="อัตรา SSR">
+                                <span class="percent">%</span>
+                            </div>
+                        </div>
+                        <div class="rate-input" data-rarity="SR">
+                            <span class="rarity-tag"><span class="dot"></span>SR</span>
+                            <div class="input-row">
+                                <input type="number" min="0" max="100" step="0.1" value="9" data-rate="SR" aria-label="อัตรา SR">
+                                <span class="percent">%</span>
+                            </div>
+                        </div>
+                        <div class="rate-input" data-rarity="R">
+                            <span class="rarity-tag"><span class="dot"></span>R</span>
+                            <div class="input-row">
+                                <input type="number" min="0" max="100" step="0.1" value="30" data-rate="R" aria-label="อัตรา R">
+                                <span class="percent">%</span>
+                            </div>
+                        </div>
+                        <div class="rate-input" data-rarity="N">
+                            <span class="rarity-tag"><span class="dot"></span>N</span>
+                            <div class="input-row">
+                                <input type="number" min="0" max="100" step="0.1" value="60" data-rate="N" aria-label="อัตรา N">
+                                <span class="percent">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rate-total valid" id="rateTotal">
+                        <span>อัตรารวม</span>
+                        <span><span class="mono" id="rateTotalValue">100.0</span>% <span id="rateTotalIcon">✓</span></span>
+                    </div>
+                </section>
+
+                <!-- ITEM POOL -->
+                <section>
+                    <div class="card-header" style="margin-bottom:12px;">
+                        <i data-lucide="package"></i>
+                        <h2>จัดการคลังไอเทม (Item Pool)</h2>
+                        <span class="text-muted mono" id="poolCount" style="font-size:0.78rem; margin-left:auto;">0 ไอเทม</span>
+                    </div>
+                    <div class="pool-form">
+                        <input type="text" class="form-input" id="itemNameInput" placeholder="ชื่อไอเทม (เช่น Excalibur)" maxlength="60">
+                        <select class="form-select" id="itemRaritySelect">
+                            <option value="SSR">SSR</option>
+                            <option value="SR">SR</option>
+                            <option value="R" selected>R</option>
+                            <option value="N">N</option>
+                        </select>
+                        <button class="btn btn-primary" id="addItemBtn">
+                            <i data-lucide="plus"></i>เพิ่มไอเทม
+                        </button>
+                    </div>
+                    <div class="pool-table-wrapper">
+                        <table class="pool-table">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อไอเทม</th>
+                                    <th>ระดับความหายาก</th>
+                                    <th style="text-align:right;">การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="poolTbody"></tbody>
+                        </table>
+                        <div class="empty-state" id="poolEmpty">
+                            <div class="empty-icon"><i data-lucide="package-open"></i></div>
+                            <div class="empty-title">ยังไม่มีไอเทมในคลัง</div>
+                            <div class="empty-text">เพิ่มไอเทมด้านบนเพื่อเริ่มจำลองการสุ่ม</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </details>
+
+        <!-- TAB: SINGLE SIMULATION -->
+        <section class="tab-content active" id="tab-single" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="dice-5"></i>
+                    <h2>จำลองการสุ่มแบบครั้งเดียว</h2>
+                </div>
+                <div class="control-grid">
+                    <div class="control-field">
+                        <label>จำนวนการสุ่ม</label>
+                        <input type="number" class="form-input" id="singleRolls" min="1" value="100">
+                    </div>
+                    <div class="control-field">
+                        <label>ราคาต่อการสุ่ม 1 ครั้ง (บาท)</label>
+                        <input type="number" class="form-input" id="singlePrice" min="0" step="0.01" value="100">
+                    </div>
+                </div>
+
+                <div class="pity-row">
+                    <div class="pity-left">
+                        <i data-lucide="shield-alert"></i>
+                        <div class="pity-info">
+                            <strong>ระบบ Pity (รับประกัน SSR)</strong>
+                            <span>รับประกันได้ SSR หลังสุ่มครบจำนวนที่กำหนดโดยไม่ได้ SSR ตัวนับจะรีเซ็ตเมื่อได้ SSR (ทั้งแบบสุ่มได้เองและจากระบบ Pity)</span>
+                        </div>
+                    </div>
+                    <div class="row gap-sm">
+                        <div class="pity-config">
+                            <span class="text-muted">ครบจำนวน:</span>
+                            <input type="number" id="pityThreshold" min="1" value="100" data-pity-threshold>
+                            <span class="text-muted">ครั้ง</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="pityToggle" data-pity-toggle>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="run-bar">
+                    <button class="btn btn-primary btn-cta" id="runSingleBtn">
+                        <i data-lucide="play"></i>เริ่มจำลองการสุ่ม 🚀
+                    </button>
+                </div>
+            </div>
+
+            <div id="singleResults">
+                <div class="card">
+                    <div class="empty-state">
+                        <div class="empty-icon"><i data-lucide="dices"></i></div>
+                        <div class="empty-title">พร้อมเริ่มจำลองเมื่อคุณพร้อม</div>
+                        <div class="empty-text">ตั้งค่าอัตรา สร้างคลังไอเทม แล้วกด <strong>เริ่มจำลองการสุ่ม</strong> เพื่อดูผลลัพธ์</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: MONTE CARLO -->
+        <section class="tab-content" id="tab-monte" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="bar-chart-3"></i>
+                    <h2>จำลองมุมมองผู้เล่น (Monte Carlo)</h2>
+                </div>
+                <p class="text-muted" style="margin-bottom:16px; font-size:0.88rem;">
+                    จำลองหลายๆ รอบของผู้เล่นเพื่อประเมินความน่าจะเป็นในการได้ SSR แบบสมจริง (ระบบ Pity จะรีเซ็ตทุกรอบ เพราะแต่ละรอบคือผู้เล่นใหม่)
+                </p>
+                <div class="control-grid">
+                    <div class="control-field">
+                        <label>งบประมาณที่มี (บาท)</label>
+                        <input type="number" class="form-input" id="mcBudget" min="0" step="0.01" value="10000">
+                    </div>
+                    <div class="control-field">
+                        <label>ราคาต่อการสุ่ม 1 ครั้ง (บาท)</label>
+                        <input type="number" class="form-input" id="mcPrice" min="0.01" step="0.01" value="100">
+                    </div>
+                    <div class="control-field">
+                        <label>จำนวนรอบที่ต้องการจำลอง (รอบ)</label>
+                        <input type="number" class="form-input" id="mcRuns" min="1" max="10000" value="500">
+                    </div>
+                </div>
+
+                <!-- Pity System (mirrored — shares state with Single Sim panel) -->
+                <div class="pity-row">
+                    <div class="pity-left">
+                        <i data-lucide="shield-alert"></i>
+                        <div class="pity-info">
+                            <strong>ระบบ Pity (รับประกัน SSR) <span class="text-muted" style="font-weight:500;font-size:0.74rem;">— เชื่อมโยงกับ Single Sim</span></strong>
+                            <span>รับประกันได้ SSR หลังสุ่มครบจำนวนที่กำหนดโดยไม่ได้ SSR ตัวนับจะรีเซ็ตเมื่อได้ SSR (ตั้งค่าที่ใดก็ได้ ทั้งสองแท็บจะซิงค์ทันที)</span>
+                        </div>
+                    </div>
+                    <div class="row gap-sm">
+                        <div class="pity-config">
+                            <span class="text-muted">ครบจำนวน:</span>
+                            <input type="number" id="mcPityThreshold" min="1" value="100" data-pity-threshold>
+                            <span class="text-muted">ครั้ง</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="mcPityToggle" data-pity-toggle>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pity-row">
+                    <div class="pity-left">
+                        <i data-lucide="gift" style="color:var(--ssr);"></i>
+                        <div class="pity-info">
+                            <strong>โบนัสสุ่มฟรี</strong>
+                            <span>ได้สุ่มฟรีตามจำนวนการสุ่มแบบจ่ายเงิน (การสุ่มฟรีไม่นับสะสมเพื่อรับฟรีเพิ่ม)</span>
+                        </div>
+                    </div>
+                    <div class="row gap-sm">
+                        <div class="pity-config" id="mcFreeRollConfig">
+                            <span class="text-muted">ทุก</span>
+                            <input type="number" id="mcFreePer" min="1" value="10">
+                            <span class="text-muted">จ่ายเงิน →</span>
+                            <input type="number" id="mcFreeBonus" min="0" value="1">
+                            <span class="text-muted">ฟรี</span>
+                        </div>
+                        <label class="toggle" title="เปิด/ปิด โบนัสสุ่มฟรี">
+                            <input type="checkbox" id="mcFreeRollToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="run-bar">
+                    <button class="btn btn-primary btn-cta" id="runMonteBtn">
+                        <i data-lucide="zap"></i>เริ่ม Monte Carlo ⚡
+                    </button>
+                </div>
+            </div>
+
+            <div id="monteResults">
+                <div class="card">
+                    <div class="empty-state">
+                        <div class="empty-icon"><i data-lucide="trending-up"></i></div>
+                        <div class="empty-title">ยังไม่มีข้อมูล Monte Carlo</div>
+                        <div class="empty-text">ตั้งงบประมาณและจำนวนรอบ แล้วกดเริ่มจำลองเพื่อดูค่าสถิติความน่าจะเป็นในการได้ SSR ตลอดหลายรอบ</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: HISTORY -->
+        <section class="tab-content" id="tab-history" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="history"></i>
+                    <h2>ประวัติการจำลองย้อนหลัง</h2>
+                    <span class="text-muted" style="font-size:0.82rem;" id="historyCount">บันทึก 0 รอบ</span>
+                    <div class="card-header-actions">
+                        <button class="btn btn-ghost" id="clearHistoryBtn">
+                            <i data-lucide="trash-2"></i>ล้างประวัติ
+                        </button>
+                    </div>
+                </div>
+                <div id="historyContent">
+                    <div class="empty-state">
+                        <div class="empty-icon"><i data-lucide="archive"></i></div>
+                        <div class="empty-title">ยังไม่มีประวัติ</div>
+                        <div class="empty-text">ประวัติการจำลอง 10 รอบล่าสุด (ทั้ง Single + Monte Carlo) จะแสดงที่นี่ และจะถูกบันทึกไว้แม้รีเฟรชหน้า</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // ====================================================================
+        // CONSTANTS
+        // ====================================================================
+        const RARITIES = ['SSR', 'SR', 'R', 'N'];
+        const STORAGE_KEY = 'gachaLab.v1';
+        const MAX_HISTORY = 10;
+
+        // ====================================================================
+        // STATE — single source of truth
+        // ====================================================================
+        // Default pool — pre-populated so users can simulate immediately without
+        // typing items. Overwritten by localStorage only if the user has saved
+        // their own non-empty custom pool.
+        const DEFAULT_ITEMS = [
+            { id: 'def-ssr-1', name: 'ดาบศักดิ์สิทธิ์ Excalibur',       rarity: 'SSR' },
+            { id: 'def-ssr-2', name: 'คทามหาเวท Chronos',                rarity: 'SSR' },
+            { id: 'def-sr-1',  name: 'เกราะอัศวินเหล็กกล้า',             rarity: 'SR'  },
+            { id: 'def-sr-2',  name: 'ธนูวายุพิโรธ',                     rarity: 'SR'  },
+            { id: 'def-r-1',   name: 'ยาเพิ่มพลังชีวิตระดับสูง',         rarity: 'R'   },
+            { id: 'def-r-2',   name: 'แหวนเวทมนตร์ฝึกหัด',               rarity: 'R'   },
+            { id: 'def-n-1',   name: 'หินแร่ตีบวกทั่วไป',                rarity: 'N'   },
+            { id: 'def-n-2',   name: 'โพชั่นฟื้นฟูขนาดเล็ก',             rarity: 'N'   }
+        ];
+
+        const state = {
+            rates: { SSR: 1, SR: 9, R: 30, N: 60 },
+            items: DEFAULT_ITEMS.map(it => ({ ...it })),
+            pity: { enabled: false, threshold: 100 },
+            singleConfig: { rolls: 100, pricePerRoll: 100 },
+            monteConfig: {
+                budget: 10000, pricePerRoll: 100, runs: 500,
+                freeRollEnabled: true,
+                freeRoll: { perPaid: 10, bonus: 1 }
+            },
+            lastSingleResult: null,
+            lastMonteResult: null,
+            history: [],
+            theme: 'dark',
+            activeTab: 'single'
+        };
+
+        function persistState() {
+            try {
+                const payload = {
+                    rates: state.rates, items: state.items, pity: state.pity,
+                    singleConfig: state.singleConfig, monteConfig: state.monteConfig,
+                    history: state.history, theme: state.theme
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) { /* storage disabled */ }
+        }
+
+        function hydrateState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                if (data.rates) Object.assign(state.rates, data.rates);
+                // Only overwrite default pool if the user has saved a non-empty custom one
+                if (Array.isArray(data.items) && data.items.length > 0) state.items = data.items;
+                if (data.pity) Object.assign(state.pity, data.pity);
+                if (data.singleConfig) Object.assign(state.singleConfig, data.singleConfig);
+                if (data.monteConfig) {
+                    Object.assign(state.monteConfig, data.monteConfig);
+                    if (data.monteConfig.freeRoll)
+                        Object.assign(state.monteConfig.freeRoll, data.monteConfig.freeRoll);
+                    // Back-compat: older persisted state may lack this flag
+                    if (typeof data.monteConfig.freeRollEnabled !== 'boolean') {
+                        state.monteConfig.freeRollEnabled = true;
+                    }
+                }
+                if (Array.isArray(data.history)) state.history = data.history;
+                if (data.theme) state.theme = data.theme;
+            } catch (e) { /* corrupt payload */ }
+        }
+
+        // ====================================================================
+        // UTILITIES
+        // ====================================================================
+        const $ = (sel, root = document) => root.querySelector(sel);
+        const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+        const fmt = (n, d = 0) => Number(n).toLocaleString('en-US', {
+            minimumFractionDigits: d, maximumFractionDigits: d
+        });
+        const escapeHtml = (s) => String(s).replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[ch]);
+        const uid = () => Math.random().toString(36).slice(2, 10);
+
+        // ====================================================================
+        // TOAST SYSTEM
+        // ====================================================================
+        function toast(message, type = 'info', title = '') {
+            const container = $('#toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            const iconMap = { success: 'check-circle', error: 'alert-circle', warning: 'alert-triangle', info: 'info' };
+            const defaultTitle = { success: 'สำเร็จ', error: 'ผิดพลาด', warning: 'คำเตือน', info: 'ข้อมูล' };
+            t.innerHTML = `
+                <div class="toast-icon"><i data-lucide="${iconMap[type]}"></i></div>
+                <div class="toast-body">
+                    <div class="toast-title">${escapeHtml(title || defaultTitle[type])}</div>
+                    <div class="toast-msg">${escapeHtml(message)}</div>
+                </div>
+                <button class="toast-close" aria-label="ปิด"><i data-lucide="x"></i></button>
+            `;
+            container.appendChild(t);
+            lucide.createIcons();
+            const dismiss = () => { t.classList.add('leaving'); setTimeout(() => t.remove(), 250); };
+            t.querySelector('.toast-close').addEventListener('click', dismiss);
+            setTimeout(dismiss, 4500);
+        }
+
+        // ====================================================================
+        // VALIDATION
+        // ====================================================================
+        function validateRates() {
+            const total = RARITIES.reduce((s, r) => s + (Number(state.rates[r]) || 0), 0);
+            const allNonNegative = RARITIES.every(r => Number(state.rates[r]) >= 0);
+            const ok = Math.abs(total - 100) < 0.001 && allNonNegative;
+            return { ok, total, allNonNegative };
+        }
+
+        function validatePool() {
+            const missing = [];
+            for (const r of RARITIES) {
+                if ((Number(state.rates[r]) || 0) > 0) {
+                    if (!state.items.some(it => it.rarity === r)) missing.push(r);
+                }
+            }
+            return { ok: missing.length === 0, missing };
+        }
+
+        // Pre-flight Validation & Execution Block
+        function preflightCheck() {
+            const rate = validateRates();
+            if (!rate.ok) {
+                const msg = !rate.allNonNegative
+                    ? 'อัตราต้องไม่ติดลบ กรุณาแก้ไขให้ทุกค่ามากกว่าหรือเท่ากับ 0'
+                    : `ผลรวมอัตราสุ่มต้องเท่ากับ 100% เสมอ (ปัจจุบัน: ${fmt(rate.total, 1)}%)`;
+                toast(msg, 'error', 'ตั้งค่าอัตราไม่ถูกต้อง');
+                return false;
+            }
+            const pool = validatePool();
+            if (!pool.ok) {
+                toast(`กรุณาเพิ่มไอเทมอย่างน้อย 1 ชิ้นในระดับที่มีอัตราสุ่มมากกว่า 0% (ขาด: ${pool.missing.join(', ')})`,
+                      'error', 'ไม่มีไอเทมในระดับที่ต้องสุ่ม');
+                return false;
+            }
+            return true;
+        }
+
+        // ====================================================================
+        // RNG CORE — strict two-step randomization
+        // ====================================================================
+        /** Step 1: cumulative-weight selection over rarity buckets */
+        function pickRarity() {
+            const roll = Math.random() * 100;
+            let cumulative = 0;
+            for (const r of RARITIES) {
+                cumulative += Number(state.rates[r]) || 0;
+                if (roll < cumulative) return r;
+            }
+            for (let i = RARITIES.length - 1; i >= 0; i--) {
+                if ((Number(state.rates[RARITIES[i]]) || 0) > 0) return RARITIES[i];
+            }
+            return RARITIES[RARITIES.length - 1];
+        }
+
+        /** Step 2: uniform random item from chosen rarity's pool */
+        function pickItem(rarity) {
+            const pool = state.items.filter(it => it.rarity === rarity);
+            if (!pool.length) return null;
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        // ====================================================================
+        // SINGLE SIMULATION ENGINE
+        // ====================================================================
+        function runSingleSimulation() {
+            if (!preflightCheck()) return;
+            const rolls = Math.max(1, Math.floor(Number(state.singleConfig.rolls) || 0));
+            const price = Math.max(0, Number(state.singleConfig.pricePerRoll) || 0);
+            const pityEnabled = state.pity.enabled;
+            const pityThreshold = Math.max(1, Math.floor(state.pity.threshold || 100));
+            const hasSSRPool = state.items.some(it => it.rarity === 'SSR');
+
+            const log = [];
+            const rarityCount = { SSR: 0, SR: 0, R: 0, N: 0 };
+            const itemCount = {};
+            let pityCounter = 0;
+            let pityTriggers = 0;
+
+            for (let i = 1; i <= rolls; i++) {
+                let rarity = pickRarity();
+                let viaPity = false;
+
+                // Pity override
+                if (pityEnabled && rarity !== 'SSR' && pityCounter >= pityThreshold - 1 && hasSSRPool) {
+                    rarity = 'SSR';
+                    viaPity = true;
+                    pityTriggers++;
+                }
+
+                const item = pickItem(rarity);
+                // Pity counter: reset on SSR (natural OR forced), increment otherwise
+                if (rarity === 'SSR') pityCounter = 0;
+                else pityCounter++;
+
+                rarityCount[rarity]++;
+                const itemName = item ? item.name : '(empty)';
+                const key = `${rarity}::${itemName}`;
+                itemCount[key] = (itemCount[key] || 0) + 1;
+                log.push({ rollNo: i, rarity, itemName, cost: price, viaPity });
+            }
+
+            const totalCost = price * rolls;
+            const mostCommonRarity = Object.entries(rarityCount).sort((a, b) => b[1] - a[1])[0][0];
+
+            const comparison = RARITIES.map(r => ({
+                rarity: r,
+                target: Number(state.rates[r]) || 0,
+                actualCount: rarityCount[r],
+                actualPct: rolls > 0 ? (rarityCount[r] / rolls) * 100 : 0
+            }));
+
+            const result = {
+                timestamp: Date.now(),
+                type: 'single',
+                config: { rolls, price, pityEnabled, pityThreshold },
+                rolls: log,
+                summary: { totalRolls: rolls, totalCost, ssrCount: rarityCount.SSR, mostCommonRarity, pityTriggers },
+                rarityCount, itemCount, comparison
+            };
+
+            state.lastSingleResult = result;
+            pushHistory(buildHistoryEntry(result));
+            renderSingleResults();
+            toast(`สุ่มทั้งหมด ${fmt(rolls)} ครั้ง · ได้ SSR ${rarityCount.SSR} ชิ้น` +
+                  (pityEnabled && pityTriggers ? ` (จากระบบ Pity ${pityTriggers} ครั้ง)` : ''),
+                  'success', 'จำลองเสร็จสิ้น');
+        }
+
+        // ====================================================================
+        // MONTE CARLO ENGINE — Player POV
+        // ====================================================================
+        function runMonteCarlo() {
+            if (!preflightCheck()) return;
+            const budget = Math.max(0, Number(state.monteConfig.budget) || 0);
+            const price = Number(state.monteConfig.pricePerRoll) || 0;
+            const runs = Math.max(1, Math.floor(Number(state.monteConfig.runs) || 0));
+            const perPaid = Math.max(1, Math.floor(state.monteConfig.freeRoll.perPaid || 1));
+            const bonus = Math.max(0, Math.floor(state.monteConfig.freeRoll.bonus || 0));
+
+            if (price <= 0) {
+                toast('ราคาต่อการสุ่มต้องมากกว่า 0', 'error', 'ราคาไม่ถูกต้อง');
+                return;
+            }
+
+            // CRITICAL: free rolls computed ONCE from paid count — no cascade
+            // When the Free Roll toggle is off, freeRolls is forced to 0 regardless of inputs
+            const freeRollEnabled = !!state.monteConfig.freeRollEnabled;
+            const paidRolls = Math.floor(budget / price);
+            const freeRolls = freeRollEnabled ? Math.floor(paidRolls / perPaid) * bonus : 0;
+            const totalRolls = paidRolls + freeRolls;
+
+            if (totalRolls <= 0) {
+                toast('งบประมาณไม่พอสุ่ม กรุณาเพิ่มงบหรือลดราคา', 'warning', 'ไม่มีการสุ่ม');
+                return;
+            }
+
+            const pityEnabled = state.pity.enabled;
+            const pityThreshold = Math.max(1, Math.floor(state.pity.threshold || 100));
+            const hasSSRPool = state.items.some(it => it.rarity === 'SSR');
+
+            const perRun = [];
+            let runsWithSSR = 0, runsWith0SSR = 0;
+            let bestSSR = -Infinity, worstSSR = Infinity;
+            const totals = { SSR: 0, SR: 0, R: 0, N: 0 };
+
+            for (let run = 0; run < runs; run++) {
+                const counts = { SSR: 0, SR: 0, R: 0, N: 0 };
+                let pityCounter = 0; // resets per session
+                for (let i = 0; i < totalRolls; i++) {
+                    let rarity = pickRarity();
+                    if (pityEnabled && rarity !== 'SSR' && pityCounter >= pityThreshold - 1 && hasSSRPool) {
+                        rarity = 'SSR';
+                    }
+                    if (rarity === 'SSR') pityCounter = 0;
+                    else pityCounter++;
+                    counts[rarity]++;
+                }
+                perRun.push(counts);
+                if (counts.SSR > 0) runsWithSSR++; else runsWith0SSR++;
+                if (counts.SSR > bestSSR) bestSSR = counts.SSR;
+                if (counts.SSR < worstSSR) worstSSR = counts.SSR;
+                for (const r of RARITIES) totals[r] += counts[r];
+            }
+
+            const chanceAtLeast1 = (runsWithSSR / runs) * 100;
+            const saltyRate = (runsWith0SSR / runs) * 100;
+            const averages = {};
+            for (const r of RARITIES) averages[r] = totals[r] / runs;
+
+            const insight = buildThaiInsight({
+                budget, totalRolls, paidRolls, freeRolls, runs,
+                chanceAtLeast1, saltyRate, avgSSR: averages.SSR, bestSSR, worstSSR
+            });
+
+            const result = {
+                timestamp: Date.now(),
+                type: 'monte',
+                config: { budget, price, runs, perPaid, bonus, freeRollEnabled, pityEnabled, pityThreshold },
+                session: { paidRolls, freeRolls, totalRolls },
+                stats: { chanceAtLeast1, saltyRate, averages, bestSSR, worstSSR, runsWithSSR, runsWith0SSR },
+                insight, perRun
+            };
+
+            state.lastMonteResult = result;
+            pushHistory(buildHistoryEntry(result));
+            renderMonteResults();
+            toast(`จำลอง ${fmt(runs)} รอบ · โอกาสได้ SSR อย่างน้อย 1 ชิ้น = ${fmt(chanceAtLeast1, 1)}%`,
+                  'success', 'Monte Carlo เสร็จสิ้น');
+        }
+
+        function buildThaiInsight({ budget, totalRolls, paidRolls, freeRolls, runs, chanceAtLeast1, saltyRate, avgSSR, bestSSR, worstSSR }) {
+            return `หากผู้เล่นใช้เงิน ${fmt(budget, 2)} บาท จะได้สุ่มทั้งหมด ${fmt(totalRolls)} ครั้ง ` +
+                   `(จ่ายเอง ${fmt(paidRolls)} ครั้ง + ฟรี ${fmt(freeRolls)} ครั้ง). ` +
+                   `จากการจำลอง ${fmt(runs)} รอบ มีโอกาสได้ SSR อย่างน้อย 1 ชิ้น คิดเป็น ${fmt(chanceAtLeast1, 2)}% ` +
+                   `และมีโอกาสเกลือ (ไม่ได้ SSR เลย) ${fmt(saltyRate, 2)}%. ` +
+                   `เฉลี่ยได้ SSR ประมาณ ${fmt(avgSSR, 2)} ชิ้นต่อรอบ ` +
+                   `(ดวงดีสุด ${bestSSR} ชิ้น / ดวงแย่สุด ${worstSSR} ชิ้น).`;
+        }
+
+        // ====================================================================
+        // HISTORY
+        // ====================================================================
+        function buildHistoryEntry(result) {
+            if (result.type === 'single') {
+                return {
+                    timestamp: result.timestamp, type: 'single',
+                    config: result.config, summary: result.summary,
+                    rarityCount: result.rarityCount
+                };
+            }
+            return {
+                timestamp: result.timestamp, type: 'monte',
+                config: result.config, session: result.session, stats: result.stats
+            };
+        }
+
+        function pushHistory(entry) {
+            state.history.unshift(entry);
+            if (state.history.length > MAX_HISTORY) state.history.length = MAX_HISTORY;
+            persistState();
+            renderHistory();
+        }
+
+        function clearHistory() {
+            if (!state.history.length) { toast('ประวัติว่างอยู่แล้ว', 'info'); return; }
+            state.history = [];
+            persistState();
+            renderHistory();
+            toast('ล้างประวัติเรียบร้อยแล้ว', 'success');
+        }
+
+        // ====================================================================
+        // CSV EXPORT
+        // ====================================================================
+        /**
+         * Build and trigger a CSV download.
+         * `headers` is optional — pass null/[] when rows already contain section headers,
+         * which we use for multi-section CSVs (summary + per-roll/per-run detail).
+         *
+         * CSV-injection safety: cells beginning with `=`, `+`, `-`, `@`, TAB, or CR
+         * are prefixed with a single apostrophe so Excel/Sheets do NOT interpret
+         * them as formulas. This is the OWASP-recommended sanitization and is the
+         * reason "=== SUMMARY ===" labels previously rendered as #ERROR!.
+         */
+        function downloadCSV(filename, headers, rows) {
+            const csvEscape = (v) => {
+                if (v === null || v === undefined) return '';
+                let s = String(v);
+                // Neutralize formula-injection-prone leading characters
+                if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+                if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+                return s;
+            };
+            const lines = [];
+            if (headers && headers.length) lines.push(headers.map(csvEscape).join(','));
+            for (const row of rows) lines.push(row.map(csvEscape).join(','));
+            // UTF-8 BOM so Excel reads Thai characters correctly
+            const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function exportSingleCSV() {
+            if (!state.lastSingleResult) { toast('กรุณาเริ่มจำลองการสุ่มก่อน', 'warning'); return; }
+            const r = state.lastSingleResult;
+            const { summary, comparison, config } = r;
+            const rows = [];
+
+            // ── SECTION 1: SUMMARY ──────────────────────────────────────
+            // Plain text section label (no leading '=' to avoid #ERROR!)
+            rows.push(['สรุปผลการจำลอง']);
+            rows.push(['หัวข้อ', 'ค่า']);
+            rows.push(['วันที่จำลอง', new Date(r.timestamp).toLocaleString('th-TH')]);
+            rows.push(['จำนวนการสุ่มทั้งหมด', summary.totalRolls]);
+            rows.push(['ราคาต่อการสุ่ม (บาท)', config.price.toFixed(2)]);
+            rows.push(['ค่าใช้จ่ายรวม (บาท)', summary.totalCost.toFixed(2)]);
+            rows.push(['จำนวน SSR ที่ได้', summary.ssrCount]);
+            rows.push(['ระดับที่ออกบ่อยที่สุด', summary.mostCommonRarity]);
+            rows.push(['ระบบ Pity', config.pityEnabled ? `เปิด (ครบ ${config.pityThreshold} ครั้ง)` : 'ปิด']);
+            rows.push(['Pity ทำงาน (ครั้ง)', summary.pityTriggers || 0]);
+            rows.push([]);
+
+            // ── SECTION 2: TARGET vs ACTUAL COMPARISON ──────────────────
+            rows.push(['เปรียบเทียบอัตราเป้าหมาย vs จริง']);
+            rows.push(['ระดับ', 'เป้าหมาย %', 'จำนวนจริง', 'จริง %', 'ส่วนต่าง %']);
+            for (const c of comparison) {
+                rows.push([
+                    c.rarity,
+                    c.target.toFixed(2),
+                    c.actualCount,
+                    c.actualPct.toFixed(2),
+                    (c.actualPct - c.target).toFixed(2)
+                ]);
+            }
+            rows.push([]);
+
+            // ── SECTION 3: PER-ROLL DETAIL LOG ──────────────────────────
+            rows.push(['รายละเอียดการสุ่มแต่ละครั้ง']);
+            rows.push(['ครั้งที่', 'ระดับ', 'ชื่อไอเทม', 'ราคา (บาท)']);
+            for (const roll of r.rolls) {
+                rows.push([roll.rollNo, roll.rarity, roll.itemName, roll.cost.toFixed(2)]);
+            }
+
+            const stamp = new Date(r.timestamp).toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            downloadCSV(`gacha-single-${stamp}.csv`, null, rows);
+            toast('ดาวน์โหลดไฟล์ CSV เรียบร้อย', 'success');
+        }
+
+        function exportMonteCSV() {
+            if (!state.lastMonteResult) { toast('กรุณาเริ่ม Monte Carlo ก่อน', 'warning'); return; }
+            const r = state.lastMonteResult;
+            const rows = [];
+
+            // ── SECTION 1: CONFIG SNAPSHOT (2 cols) ─────────────────────
+            // No leading '=' on labels — Excel/Sheets parse those as formulas.
+            rows.push(['การตั้งค่า']);
+            rows.push(['หัวข้อ', 'ค่า']);
+            rows.push(['วันที่จำลอง', new Date(r.timestamp).toLocaleString('th-TH')]);
+            rows.push(['งบประมาณ (บาท)', r.config.budget]);
+            rows.push(['ราคาต่อการสุ่ม (บาท)', r.config.price]);
+            rows.push(['จำนวนรอบทั้งหมด', r.config.runs]);
+            rows.push(['โบนัสสุ่มฟรี',
+                r.config.freeRollEnabled ? `เปิด (ทุก ${r.config.perPaid} จ่าย เพิ่ม ${r.config.bonus} ฟรี)` : 'ปิด']);
+            rows.push(['ระบบ Pity',
+                r.config.pityEnabled ? `เปิด (ครบ ${r.config.pityThreshold} ครั้ง รีเซ็ตทุกรอบ)` : 'ปิด']);
+            rows.push([]);
+
+            // ── SECTION 2: SESSION COMPOSITION (2 cols) ─────────────────
+            rows.push(['องค์ประกอบของแต่ละรอบ']);
+            rows.push(['หัวข้อ', 'ค่า']);
+            rows.push(['สุ่มแบบจ่ายเงิน / รอบ', r.session.paidRolls]);
+            rows.push(['สุ่มฟรี / รอบ', r.session.freeRolls]);
+            rows.push(['สุ่มรวม / รอบ', r.session.totalRolls]);
+            rows.push([]);
+
+            // ── SECTION 3: STATISTICAL SUMMARY (2 cols) ─────────────────
+            rows.push(['ผลสถิติรวม']);
+            rows.push(['หัวข้อ', 'ค่า']);
+            rows.push(['โอกาสได้ SSR อย่างน้อย 1 ชิ้น (%)', r.stats.chanceAtLeast1.toFixed(4)]);
+            rows.push(['อัตราเกลือ - ไม่ได้ SSR เลย (%)', r.stats.saltyRate.toFixed(4)]);
+            rows.push(['SSR สูงสุดใน 1 รอบ', r.stats.bestSSR]);
+            rows.push(['SSR ต่ำสุดใน 1 รอบ', r.stats.worstSSR]);
+            rows.push(['จำนวนรอบที่ได้ SSR', r.stats.runsWithSSR]);
+            rows.push(['จำนวนรอบที่ไม่ได้ SSR', r.stats.runsWith0SSR]);
+            rows.push([]);
+
+            // ── SECTION 4: AVERAGES PER RARITY (3 cols) ─────────────────
+            rows.push(['ค่าเฉลี่ยไอเทมที่ได้ต่อรอบ']);
+            rows.push(['ระดับ', 'เฉลี่ยต่อรอบ', 'รวมทุกรอบ']);
+            for (const rar of RARITIES) {
+                rows.push([rar, r.stats.averages[rar].toFixed(4), Math.round(r.stats.averages[rar] * r.config.runs)]);
+            }
+            rows.push([]);
+
+            // ── SECTION 5: PER-RUN DETAIL (5 cols) ──────────────────────
+            rows.push(['รายละเอียดแต่ละรอบ']);
+            rows.push(['รอบที่', 'SSR', 'SR', 'R', 'N']);
+            r.perRun.forEach((c, i) => rows.push([i + 1, c.SSR, c.SR, c.R, c.N]));
+
+            const stamp = new Date(r.timestamp).toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            downloadCSV(`gacha-monte-${stamp}.csv`, null, rows);
+            toast('ดาวน์โหลด CSV ของ Monte Carlo เรียบร้อย', 'success');
+        }
+
+        // ====================================================================
+        // RENDERERS
+        // ====================================================================
+        function renderRateTotal() {
+            const { ok, total } = validateRates();
+            const el = $('#rateTotal');
+            $('#rateTotalValue').textContent = fmt(total, 1);
+            $('#rateTotalIcon').textContent = ok ? '✓' : '✕';
+            el.classList.toggle('valid', ok);
+            el.classList.toggle('invalid', !ok);
+        }
+
+        function renderPool() {
+            const tbody = $('#poolTbody');
+            const empty = $('#poolEmpty');
+            $('#poolCount').textContent = `${state.items.length} ไอเทม`;
+            if (state.items.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            tbody.innerHTML = state.items.map(it => `
+                <tr data-id="${it.id}">
+                    <td>${escapeHtml(it.name)}</td>
+                    <td><span class="rarity-badge ${it.rarity}">${it.rarity}</span></td>
+                    <td class="actions">
+                        <button class="btn btn-ghost btn-icon" data-action="edit" title="แก้ไข"><i data-lucide="pencil"></i></button>
+                        <button class="btn btn-ghost btn-icon" data-action="delete" title="ลบ"><i data-lucide="trash-2"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        /**
+         * Pure-CSS stacked horizontal-bar distribution summary.
+         * Renders two parallel bars (TARGET vs ACTUAL) where each rarity is a
+         * proportional segment, plus a legend showing target/actual/delta per rarity.
+         */
+        function renderDistributionHTML(comparison) {
+            const renderBar = (key) => `
+                <div class="dist-row">
+                    <span class="dist-label">${key === 'target' ? 'ตั้งไว้' : 'สุ่มจริง'}</span>
+                    <div class="dist-bar">
+                        ${comparison.map(c => {
+                            const pct = key === 'target' ? c.target : c.actualPct;
+                            if (pct <= 0) return '';
+                            const display = pct >= 4 ? `${c.rarity} ${fmt(pct, 1)}%` : '';
+                            return `<div class="dist-seg ${c.rarity}" style="width:${pct}%;" title="${c.rarity}: ${fmt(pct, 2)}%">${display}</div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            const legend = comparison.map(c => {
+                const delta = c.actualPct - c.target;
+                const cls = Math.abs(delta) < 0.5 ? 'zero' : (delta > 0 ? 'pos' : 'neg');
+                const sign = delta >= 0 ? '+' : '';
+                return `<div class="dist-legend-item ${c.rarity}">
+                    <span class="dist-legend-swatch"></span>
+                    <span class="rarity-badge ${c.rarity}" style="padding:1px 7px;">${c.rarity}</span>
+                    <span class="dist-legend-val">${fmt(c.actualPct, 1)}%</span>
+                    <span class="dist-legend-delta ${cls}">(${sign}${fmt(delta, 1)})</span>
+                </div>`;
+            }).join('');
+            return `<div class="dist-summary">
+                ${renderBar('target')}
+                ${renderBar('actual')}
+                <div class="dist-legend">${legend}</div>
+            </div>`;
+        }
+
+        function renderChartHTML(comparison) {
+            return `<div class="chart">
+                ${comparison.map(c => `
+                    <div class="chart-row">
+                        <div class="chart-label"><span class="rarity-badge ${c.rarity}">${c.rarity}</span></div>
+                        <div class="chart-bars">
+                            <div class="chart-bar-line">
+                                <span class="chart-tag" title="อัตราสุ่มที่ตั้งไว้">ตั้งไว้</span>
+                                <div class="chart-bar-track">
+                                    <div class="chart-bar-fill target" style="width:${Math.min(100, c.target)}%;">${fmt(c.target, 1)}%</div>
+                                </div>
+                            </div>
+                            <div class="chart-bar-line">
+                                <span class="chart-tag" title="อัตราส่วนที่สุ่มได้จริง">สุ่มจริง</span>
+                                <div class="chart-bar-track">
+                                    <div class="chart-bar-fill actual ${c.rarity}" style="width:${Math.min(100, c.actualPct)}%;">${fmt(c.actualPct, 1)}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderSingleResults() {
+            const root = $('#singleResults');
+            const r = state.lastSingleResult;
+            if (!r) {
+                root.innerHTML = `<div class="card"><div class="empty-state">
+                    <div class="empty-icon"><i data-lucide="dices"></i></div>
+                    <div class="empty-title">พร้อมเริ่มจำลองเมื่อคุณพร้อม</div>
+                    <div class="empty-text">ตั้งค่าอัตรา สร้างคลังไอเทม แล้วกด <strong>เริ่มจำลองการสุ่ม</strong> เพื่อดูผลลัพธ์</div>
+                </div></div>`;
+                lucide.createIcons();
+                return;
+            }
+            const { summary, comparison, itemCount, config } = r;
+            const itemRows = Object.entries(itemCount)
+                .sort((a, b) => b[1] - a[1])
+                .map(([key, count]) => {
+                    const [rarity, name] = key.split('::');
+                    return `<div class="log-item">
+                        <span class="roll-no">×${count}</span>
+                        <span class="item-name">${escapeHtml(name)}</span>
+                        <span class="rarity-badge ${rarity}">${rarity}</span>
+                        <span class="count">${fmt((count / summary.totalRolls) * 100, 2)}%</span>
+                    </div>`;
+                }).join('');
+
+            root.innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-card accent">
+                        <div class="stat-label"><i data-lucide="dice-5"></i>จำนวนการสุ่มทั้งหมด</div>
+                        <div class="stat-value">${fmt(summary.totalRolls)}</div>
+                        <div class="stat-sub">${config.pityEnabled ? `ระบบ Pity ทำงาน ${summary.pityTriggers} ครั้ง` : 'ปิดระบบ Pity'}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label"><i data-lucide="coins"></i>ค่าใช้จ่ายรวมทั้งหมด</div>
+                        <div class="stat-value">${fmt(summary.totalCost, 2)}</div>
+                        <div class="stat-sub">@ ${fmt(config.price, 2)} ต่อครั้ง</div>
+                    </div>
+                    <div class="stat-card ssr">
+                        <div class="stat-label"><i data-lucide="star"></i>จำนวน SSR ที่ได้</div>
+                        <div class="stat-value">${fmt(summary.ssrCount)}</div>
+                        <div class="stat-sub">${fmt((summary.ssrCount / summary.totalRolls) * 100, 2)}% ของการสุ่มทั้งหมด</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label"><i data-lucide="trophy"></i>ระดับที่ออกบ่อยที่สุด</div>
+                        <div class="stat-value">${summary.mostCommonRarity}</div>
+                        <div class="stat-sub">ระดับความหายากที่ออกมากสุด</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><i data-lucide="pie-chart"></i><h2>ภาพรวมการกระจาย (Distribution Summary)</h2></div>
+                    ${renderDistributionHTML(comparison)}
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="bar-chart-2"></i>
+                        <h2>Visual Summary — อัตราสุ่มที่ตั้งไว้ vs อัตราส่วนที่สุ่มได้จริง</h2>
+                    </div>
+                    ${renderChartHTML(comparison)}
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><i data-lucide="table"></i><h2>ตารางเปรียบเทียบ</h2></div>
+                    <table class="data-table">
+                        <thead><tr>
+                            <th>ระดับ</th><th>เป้าหมาย %</th><th>จำนวนจริง</th><th>จริง %</th><th>ส่วนต่าง Δ</th>
+                        </tr></thead>
+                        <tbody>
+                            ${comparison.map(c => {
+                                const delta = c.actualPct - c.target;
+                                const sign = delta >= 0 ? '+' : '';
+                                const color = Math.abs(delta) < 1 ? 'var(--text-muted)' :
+                                              (delta > 0 ? 'var(--success)' : 'var(--danger)');
+                                return `<tr>
+                                    <td><span class="rarity-badge ${c.rarity}">${c.rarity}</span></td>
+                                    <td>${fmt(c.target, 2)}%</td>
+                                    <td>${fmt(c.actualCount)}</td>
+                                    <td>${fmt(c.actualPct, 2)}%</td>
+                                    <td style="color:${color};">${sign}${fmt(delta, 2)}%</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="list"></i>
+                        <h2>รายละเอียดไอเทมที่ได้</h2>
+                        <div class="card-header-actions">
+                            <button class="btn btn-secondary" id="exportSingleBtn">
+                                <i data-lucide="download"></i>ส่งออก CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="log-scroll">${itemRows || '<div class="empty-text" style="padding:20px;text-align:center;">ยังไม่ได้สุ่มไอเทมใดๆ</div>'}</div>
+                </div>
+            `;
+            $('#exportSingleBtn')?.addEventListener('click', exportSingleCSV);
+            lucide.createIcons();
+        }
+
+        function renderMonteResults() {
+            const root = $('#monteResults');
+            const r = state.lastMonteResult;
+            if (!r) {
+                root.innerHTML = `<div class="card"><div class="empty-state">
+                    <div class="empty-icon"><i data-lucide="trending-up"></i></div>
+                    <div class="empty-title">ยังไม่มีข้อมูล Monte Carlo</div>
+                    <div class="empty-text">ตั้งงบประมาณและจำนวนรอบ แล้วกดเริ่มจำลอง</div>
+                </div></div>`;
+                lucide.createIcons();
+                return;
+            }
+            const { stats, session, config, insight } = r;
+            root.innerHTML = `
+                <div class="insight-banner">
+                    <div class="insight-icon"><i data-lucide="lightbulb"></i></div>
+                    <div class="insight-body">
+                        <div class="insight-title">สรุปข้อมูลเชิงลึก</div>
+                        <div class="insight-text">${escapeHtml(insight)}</div>
+                    </div>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="stat-card accent">
+                        <div class="stat-label"><i data-lucide="target"></i>โอกาสที่จะได้ SSR อย่างน้อย 1 ชิ้น</div>
+                        <div class="stat-value">${fmt(stats.chanceAtLeast1, 2)}%</div>
+                        <div class="stat-sub">${fmt(stats.runsWithSSR)}/${fmt(config.runs)} รอบ</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label"><i data-lucide="cloud-rain"></i>โอกาสที่จะไม่ได้ SSR เลย (อัตราเกลือ)</div>
+                        <div class="stat-value">${fmt(stats.saltyRate, 2)}%</div>
+                        <div class="stat-sub">${fmt(stats.runsWith0SSR)} รอบที่ไม่ได้ SSR</div>
+                    </div>
+                    <div class="stat-card ssr">
+                        <div class="stat-label"><i data-lucide="trophy"></i>กรณีดีที่สุด</div>
+                        <div class="stat-value">${stats.bestSSR}</div>
+                        <div class="stat-sub">SSR สูงสุดใน 1 รอบ</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label"><i data-lucide="snowflake"></i>กรณีแย่ที่สุด</div>
+                        <div class="stat-value">${stats.worstSSR}</div>
+                        <div class="stat-sub">SSR ต่ำสุดใน 1 รอบ</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><i data-lucide="layers"></i><h2>องค์ประกอบของแต่ละรอบ</h2></div>
+                    <table class="data-table">
+                        <thead><tr><th>หัวข้อ</th><th>ค่า</th></tr></thead>
+                        <tbody>
+                            <tr><td>งบประมาณ</td><td>${fmt(config.budget, 2)} บาท</td></tr>
+                            <tr><td>ราคาต่อการสุ่ม</td><td>${fmt(config.price, 2)} บาท</td></tr>
+                            <tr><td>สุ่มแบบจ่ายเงิน / รอบ</td><td>${fmt(session.paidRolls)} ครั้ง</td></tr>
+                            <tr><td>สุ่มฟรี / รอบ</td><td>${fmt(session.freeRolls)} ครั้ง <span class="text-muted">${config.freeRollEnabled ? `(ทุก ${config.perPaid} จ่ายเงิน → ${config.bonus} ฟรี, ไม่สะสมต่อ)` : '(ปิดโบนัสสุ่มฟรี)'}</span></td></tr>
+                            <tr><td>สุ่มรวม / รอบ</td><td><strong>${fmt(session.totalRolls)} ครั้ง</strong></td></tr>
+                            <tr><td>จำนวนรอบจำลอง</td><td>${fmt(config.runs)} รอบ</td></tr>
+                            <tr><td>ระบบ Pity</td><td>${config.pityEnabled ? `เปิดที่ ${config.pityThreshold} ครั้ง (รีเซ็ตทุกรอบ)` : 'ปิด'}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="bar-chart-2"></i>
+                        <h2>ค่าเฉลี่ยไอเทมที่ได้ต่อรอบ</h2>
+                        <div class="card-header-actions">
+                            <button class="btn btn-secondary" id="exportMonteBtn">
+                                <i data-lucide="download"></i>ส่งออก CSV
+                            </button>
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead><tr><th>ระดับ</th><th>เฉลี่ย / รอบ</th><th>รวมทั้งหมด</th></tr></thead>
+                        <tbody>
+                            ${RARITIES.map(rar => `
+                                <tr>
+                                    <td><span class="rarity-badge ${rar}">${rar}</span></td>
+                                    <td>${fmt(stats.averages[rar], 3)}</td>
+                                    <td>${fmt(stats.averages[rar] * config.runs)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            $('#exportMonteBtn')?.addEventListener('click', exportMonteCSV);
+            lucide.createIcons();
+        }
+
+        function renderHistory() {
+            const root = $('#historyContent');
+            $('#historyCount').textContent = `บันทึก ${state.history.length} รอบ`;
+            if (state.history.length === 0) {
+                root.innerHTML = `<div class="empty-state">
+                    <div class="empty-icon"><i data-lucide="archive"></i></div>
+                    <div class="empty-title">ยังไม่มีประวัติ</div>
+                    <div class="empty-text">ประวัติการจำลอง ${MAX_HISTORY} รอบล่าสุด (ทั้ง Single + Monte Carlo) จะแสดงที่นี่ และจะถูกบันทึกไว้แม้รีเฟรชหน้า</div>
+                </div>`;
+                lucide.createIcons();
+                return;
+            }
+            root.innerHTML = `<div class="history-grid">${state.history.map(h => {
+                const time = new Date(h.timestamp).toLocaleString('th-TH');
+                if (h.type === 'single') {
+                    return `<div class="history-card">
+                        <div class="history-card-head">
+                            <span class="h-time">${time}</span>
+                            <span class="h-type single">สุ่มครั้งเดียว</span>
+                        </div>
+                        <div class="history-stats">
+                            <div class="history-stat"><span class="history-stat-label">จำนวนสุ่ม</span><span class="history-stat-val">${fmt(h.summary.totalRolls)}</span></div>
+                            <div class="history-stat"><span class="history-stat-label">SSR</span><span class="history-stat-val">${fmt(h.summary.ssrCount)}</span></div>
+                            <div class="history-stat"><span class="history-stat-label">ค่าใช้จ่าย</span><span class="history-stat-val">${fmt(h.summary.totalCost, 2)}</span></div>
+                            <div class="history-stat"><span class="history-stat-label">บ่อยสุด</span><span class="history-stat-val">${h.summary.mostCommonRarity}</span></div>
+                        </div>
+                    </div>`;
+                }
+                return `<div class="history-card">
+                    <div class="history-card-head">
+                        <span class="h-time">${time}</span>
+                        <span class="h-type monte">Monte Carlo</span>
+                    </div>
+                    <div class="history-stats">
+                        <div class="history-stat"><span class="history-stat-label">จำนวนรอบ</span><span class="history-stat-val">${fmt(h.config.runs)}</span></div>
+                        <div class="history-stat"><span class="history-stat-label">งบประมาณ</span><span class="history-stat-val">${fmt(h.config.budget, 0)}</span></div>
+                        <div class="history-stat"><span class="history-stat-label">≥1 SSR</span><span class="history-stat-val">${fmt(h.stats.chanceAtLeast1, 1)}%</span></div>
+                        <div class="history-stat"><span class="history-stat-label">เกลือ</span><span class="history-stat-val">${fmt(h.stats.saltyRate, 1)}%</span></div>
+                    </div>
+                </div>`;
+            }).join('')}</div>`;
+            lucide.createIcons();
+        }
+
+        // ====================================================================
+        // INLINE ITEM EDIT
+        // ====================================================================
+        function editItemInline(tr, id) {
+            const item = state.items.find(it => it.id === id);
+            if (!item) return;
+            tr.innerHTML = `
+                <td><input type="text" class="form-input" id="editName" value="${escapeHtml(item.name)}"></td>
+                <td><select class="form-select" id="editRarity">
+                    ${RARITIES.map(r => `<option value="${r}" ${r === item.rarity ? 'selected' : ''}>${r}</option>`).join('')}
+                </select></td>
+                <td class="actions">
+                    <button class="btn btn-primary btn-icon" data-action="save" title="บันทึก"><i data-lucide="check"></i></button>
+                    <button class="btn btn-ghost btn-icon" data-action="cancel" title="ยกเลิก"><i data-lucide="x"></i></button>
+                </td>
+            `;
+            lucide.createIcons();
+            const nameInput = tr.querySelector('#editName');
+            nameInput.focus(); nameInput.select();
+            const handler = (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                if (btn.dataset.action === 'save') {
+                    const newName = tr.querySelector('#editName').value.trim();
+                    const newRarity = tr.querySelector('#editRarity').value;
+                    if (!newName) { toast('ชื่อไอเทมห้ามว่าง', 'warning'); return; }
+                    item.name = newName;
+                    item.rarity = newRarity;
+                    renderPool();
+                    persistState();
+                    toast('อัปเดตไอเทมเรียบร้อยแล้ว', 'success');
+                } else if (btn.dataset.action === 'cancel') {
+                    renderPool();
+                }
+            };
+            tr.addEventListener('click', handler);
+            nameInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') tr.querySelector('[data-action="save"]').click();
+                if (e.key === 'Escape') tr.querySelector('[data-action="cancel"]').click();
+            });
+        }
+
+        // ====================================================================
+        // EVENT BINDINGS
+        // ====================================================================
+        function addItem() {
+            const nameEl = $('#itemNameInput');
+            const rarityEl = $('#itemRaritySelect');
+            const name = nameEl.value.trim();
+            const rarity = rarityEl.value;
+            if (!name) { toast('กรุณาใส่ชื่อไอเทม', 'warning'); nameEl.focus(); return; }
+            state.items.push({ id: uid(), name, rarity });
+            nameEl.value = '';
+            nameEl.focus();
+            renderPool();
+            persistState();
+        }
+
+        function bindAll() {
+            // Rate inputs
+            $$('input[data-rate]').forEach(input => {
+                input.addEventListener('input', e => {
+                    const r = e.target.dataset.rate;
+                    let v = parseFloat(e.target.value);
+                    if (isNaN(v) || v < 0) { v = 0; e.target.value = 0; }
+                    if (v > 100) { v = 100; e.target.value = 100; }
+                    state.rates[r] = v;
+                    renderRateTotal();
+                    persistState();
+                });
+            });
+
+            // Pool actions
+            $('#addItemBtn').addEventListener('click', addItem);
+            $('#itemNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
+            $('#poolTbody').addEventListener('click', e => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                const tr = btn.closest('tr');
+                const id = tr.dataset.id;
+                if (btn.dataset.action === 'delete') {
+                    state.items = state.items.filter(it => it.id !== id);
+                    renderPool();
+                    persistState();
+                    toast('ลบไอเทมเรียบร้อยแล้ว', 'info');
+                } else if (btn.dataset.action === 'edit') {
+                    editItemInline(tr, id);
+                }
+            });
+
+            // Single sim controls
+            $('#singleRolls').addEventListener('input', e => {
+                state.singleConfig.rolls = Math.max(1, parseInt(e.target.value) || 1);
+                persistState();
+            });
+            $('#singlePrice').addEventListener('input', e => {
+                state.singleConfig.pricePerRoll = Math.max(0, parseFloat(e.target.value) || 0);
+                persistState();
+            });
+            // Dual-linked Pity controls — every input flagged with [data-pity-toggle]
+            // or [data-pity-threshold] writes to the shared state and then mirrors
+            // its value to every other instance, so both tabs stay in sync.
+            $$('[data-pity-toggle]').forEach(el => {
+                el.addEventListener('change', e => {
+                    state.pity.enabled = e.target.checked;
+                    syncPityControls();
+                    persistState();
+                });
+            });
+            $$('[data-pity-threshold]').forEach(el => {
+                el.addEventListener('input', e => {
+                    state.pity.threshold = Math.max(1, parseInt(e.target.value) || 100);
+                    syncPityControls(el); // skip the source element so cursor stays put
+                    persistState();
+                });
+            });
+            $('#runSingleBtn').addEventListener('click', runSingleSimulation);
+
+            // Monte Carlo controls
+            $('#mcBudget').addEventListener('input', e => {
+                state.monteConfig.budget = Math.max(0, parseFloat(e.target.value) || 0);
+                persistState();
+            });
+            $('#mcPrice').addEventListener('input', e => {
+                state.monteConfig.pricePerRoll = Math.max(0, parseFloat(e.target.value) || 0);
+                persistState();
+            });
+            $('#mcRuns').addEventListener('input', e => {
+                state.monteConfig.runs = Math.max(1, Math.min(10000, parseInt(e.target.value) || 1));
+                persistState();
+            });
+            $('#mcFreePer').addEventListener('input', e => {
+                state.monteConfig.freeRoll.perPaid = Math.max(1, parseInt(e.target.value) || 1);
+                persistState();
+            });
+            $('#mcFreeBonus').addEventListener('input', e => {
+                state.monteConfig.freeRoll.bonus = Math.max(0, parseInt(e.target.value) || 0);
+                persistState();
+            });
+            $('#mcFreeRollToggle').addEventListener('change', e => {
+                state.monteConfig.freeRollEnabled = e.target.checked;
+                applyFreeRollToggleVisual();
+                persistState();
+            });
+            $('#runMonteBtn').addEventListener('click', runMonteCarlo);
+
+            // Global guard — disable mouse-wheel value changes on any number input.
+            // Event delegation so dynamically-injected inputs (e.g. inline edit) inherit it.
+            document.addEventListener('wheel', (e) => {
+                const t = e.target;
+                if (t && t.tagName === 'INPUT' && t.type === 'number' && document.activeElement === t) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Tabs
+            $$('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    state.activeTab = tab;
+                    $$('.tab-btn').forEach(b => {
+                        b.classList.toggle('active', b.dataset.tab === tab);
+                        b.setAttribute('aria-selected', b.dataset.tab === tab);
+                    });
+                    $$('.tab-content').forEach(c => {
+                        c.classList.toggle('active', c.id === `tab-${tab}`);
+                    });
+                });
+            });
+
+            // Theme
+            const themeToggle = $('#themeToggle');
+            const updateThemeIcon = () => {
+                const icon = $('#themeIcon');
+                icon.setAttribute('data-lucide', state.theme === 'dark' ? 'moon' : 'sun');
+                lucide.createIcons();
+            };
+            themeToggle.addEventListener('click', () => {
+                state.theme = state.theme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', state.theme);
+                updateThemeIcon();
+                persistState();
+            });
+            updateThemeIcon();
+
+            // History
+            $('#clearHistoryBtn').addEventListener('click', clearHistory);
+        }
+
+        // ====================================================================
+        // INIT
+        // ====================================================================
+        function applyFreeRollToggleVisual() {
+            const cfg = $('#mcFreeRollConfig');
+            if (cfg) cfg.classList.toggle('is-disabled', !state.monteConfig.freeRollEnabled);
+        }
+
+        /**
+         * Broadcasts the current state.pity values to every mirrored Pity input
+         * across both panels. Pass `source` to skip the originating element
+         * (prevents cursor jumping while typing in the threshold field).
+         */
+        function syncPityControls(source) {
+            $$('[data-pity-toggle]').forEach(el => {
+                if (el !== source) el.checked = !!state.pity.enabled;
+            });
+            $$('[data-pity-threshold]').forEach(el => {
+                if (el !== source) el.value = state.pity.threshold;
+            });
+        }
+
+        function applyHydrated() {
+            $$('input[data-rate]').forEach(input => {
+                input.value = state.rates[input.dataset.rate] ?? 0;
+            });
+            $('#singleRolls').value = state.singleConfig.rolls;
+            $('#singlePrice').value = state.singleConfig.pricePerRoll;
+            // Seed every mirrored Pity control from shared state
+            syncPityControls();
+            $('#mcBudget').value = state.monteConfig.budget;
+            $('#mcPrice').value = state.monteConfig.pricePerRoll;
+            $('#mcRuns').value = state.monteConfig.runs;
+            $('#mcFreePer').value = state.monteConfig.freeRoll.perPaid;
+            $('#mcFreeBonus').value = state.monteConfig.freeRoll.bonus;
+            $('#mcFreeRollToggle').checked = !!state.monteConfig.freeRollEnabled;
+            applyFreeRollToggleVisual();
+            document.documentElement.setAttribute('data-theme', state.theme);
+        }
+
+        function init() {
+            hydrateState();
+            applyHydrated();
+            bindAll();
+            renderRateTotal();
+            renderPool();
+            renderSingleResults();
+            renderMonteResults();
+            renderHistory();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</body>
+</html>
